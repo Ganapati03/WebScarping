@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load the data
-df = pd.read_csv("C:/Users/ganap/OneDrive/Desktop/Scraped Data/WebScarping/DatamobileAnalysis.csv")
+df = pd.read_csv("DatamobileAnalysis.csv")
 
 # Clean and prepare data
 df = df.dropna(subset=["SmartPhone Price", "Product Name", "Reviews"])
