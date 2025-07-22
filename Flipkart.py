@@ -91,4 +91,4 @@ df = pd.DataFrame({
 print(df)
 
 
-df.to_csv("C:/Users/ganap/OneDrive/Desktop/Scraped Data/DatamobileAnalysis.csv", index=False)
+df.to_csv("C:/Users/ganap/OneDrive/Desktop/Scraped Data/WebScarping/DatamobileAnalysis.csv", index=False)
