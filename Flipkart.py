@@ -14,7 +14,7 @@ Descriptions = []
 Reviews = []
 
 
-for i in range(2, 23):
+for i in range(2, 10):
     url = "https://www.flipkart.com/search?q=smart+phone+under+50000&as=on&as-show=on&otracker=AS_Query_OrganicAutoSuggest_1_24_na_na_na&otracker1=AS_Query_OrganicAutoSuggest_1_24_na_na_na&as-pos=1&as-type=RECENT&suggestionId=smart+phone+under+50000&requestId=456a6ab2-c265-4070-8284-00a7bf872d22&as-searchtext=smart+phone+under+50000&page=" + str(i)
 
  

@@ -60,19 +60,26 @@ def load_data():
     df = df.dropna(subset=["SmartPhone Price", "Reviews"])
     df["SmartPhone Price"] = df["SmartPhone Price"].astype(int)
     df["Reviews"] = df["Reviews"].astype(int)
+
+    # --- NEW DATA CLEANING STEP ---
+    # Filter out unrealistic prices and review counts
+    # Assuming a minimum realistic smartphone price is 1000 and minimum reviews is 1
+    df = df[df['SmartPhone Price'] >= 1000]
+    df = df[df['Reviews'] >= 1]
+    # --- END NEW DATA CLEANING STEP ---
     
     # Extract brand from Product Name
     df["Brand"] = df["Product Name"].astype(str).apply(lambda x: x.split()[0])
     
-    # Create price categories
+    # Create price categories - Corrected to include prices above 50000
     df['Price_Category'] = pd.cut(df['SmartPhone Price'], 
-                                 bins=[0, 10000, 20000, 30000, 40000, 50000], 
-                                 labels=['Under ₹10K', '₹10K-₹20K', '₹20K-₹30K', '₹30K-₹40K', '₹40K-₹50K'])
+                                  bins=[0, 10000, 20000, 30000, 40000, 50000, float('inf')], 
+                                  labels=['Under ₹10K', '₹10K-₹20K', '₹20K-₹30K', '₹30K-₹40K', '₹40K-₹50K', '₹50K+'])
     
     # Create review categories
     df['Review_Category'] = pd.cut(df['Reviews'], 
-                                  bins=[0, 100, 500, 1000, 5000, float('inf')], 
-                                  labels=['Low (0-100)', 'Medium (100-500)', 'High (500-1K)', 'Very High (1K-5K)', 'Extremely High (5K+)'])
+                                   bins=[0, 100, 500, 1000, 5000, float('inf')], 
+                                   labels=['Low (0-100)', 'Medium (100-500)', 'High (500-1K)', 'Very High (1K-5K)', 'Extremely High (5K+)'])
     
     return df
 
@@ -162,14 +169,14 @@ elif page == "🏢 Brand Analysis":
         st.subheader("📊 Brand Distribution")
         brand_count = df["Brand"].value_counts()
         fig = px.bar(x=brand_count.index, y=brand_count.values, 
-                    title="Number of Smartphones by Brand",
-                    labels={'x': 'Brand', 'y': 'Count'})
+                     title="Number of Smartphones by Brand",
+                     labels={'x': 'Brand', 'y': 'Count'})
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
         st.subheader("🥧 Brand Market Share")
         fig = px.pie(values=brand_count.values, names=brand_count.index, 
-                    title="Brand Market Share")
+                     title="Brand Market Share")
         st.plotly_chart(fig, use_container_width=True)
     
     # Brand statistics
@@ -186,7 +193,7 @@ elif page == "🏢 Brand Analysis":
     # Brand price comparison
     st.subheader("💰 Brand Price Comparison")
     fig = px.box(df, x='Brand', y='SmartPhone Price', 
-                title="Price Distribution by Brand")
+                 title="Price Distribution by Brand")
     fig.update_xaxes(tickangle=45)
 
     st.plotly_chart(fig, use_container_width=True)
@@ -194,7 +201,7 @@ elif page == "🏢 Brand Analysis":
     # Brand review comparison
     st.subheader("⭐ Brand Review Comparison")
     fig = px.box(df, x='Brand', y='Reviews', 
-                title="Review Distribution by Brand")
+                 title="Review Distribution by Brand")
     fig.update_xaxes(tickangle=45)
 
     st.plotly_chart(fig, use_container_width=True)
@@ -203,8 +210,8 @@ elif page == "🏢 Brand Analysis":
     st.subheader("🏆 Top Brands by Average Price")
     top_brands_price = df.groupby('Brand')['SmartPhone Price'].mean().sort_values(ascending=False).head(10)
     fig = px.bar(x=top_brands_price.index, y=top_brands_price.values,
-                title="Top 10 Brands by Average Price",
-                labels={'x': 'Brand', 'y': 'Average Price (₹)'})
+                 title="Top 10 Brands by Average Price",
+                 labels={'x': 'Brand', 'y': 'Average Price (₹)'})
     st.plotly_chart(fig, use_container_width=True)
 
 elif page == "💰 Price Analysis":
@@ -216,21 +223,21 @@ elif page == "💰 Price Analysis":
     with col1:
         st.subheader("📊 Price Distribution")
         fig = px.histogram(df, x='SmartPhone Price', nbins=30,
-                          title="Price Distribution")
+                           title="Price Distribution")
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
         st.subheader("📈 Price Categories")
-        price_cat_count = df['Price_Category'].value_counts()
+        price_cat_count = df['Price_Category'].value_counts().sort_index() # Sort to ensure correct order
         fig = px.bar(x=price_cat_count.index, y=price_cat_count.values,
-                    title="Smartphones by Price Category")
+                     title="Smartphones by Price Category")
         st.plotly_chart(fig, use_container_width=True)
     
     # Price vs Reviews correlation
     st.subheader("📈 Price vs Reviews Correlation")
     fig = px.scatter(df, x='SmartPhone Price', y='Reviews', color='Brand',
-                    title="Price vs Reviews Correlation",
-                    hover_data=['Product Name'])
+                     title="Price vs Reviews Correlation",
+                     hover_data=['Product Name'])
     st.plotly_chart(fig, use_container_width=True)
     
     # Price statistics by category
@@ -264,14 +271,14 @@ elif page == "⭐ Review Analysis":
     with col1:
         st.subheader("📊 Review Distribution")
         fig = px.histogram(df, x='Reviews', nbins=30,
-                          title="Review Count Distribution")
+                           title="Review Count Distribution")
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
         st.subheader("📈 Review Categories")
-        review_cat_count = df['Review_Category'].value_counts()
+        review_cat_count = df['Review_Category'].value_counts().sort_index() # Sort to ensure correct order
         fig = px.bar(x=review_cat_count.index, y=review_cat_count.values,
-                    title="Smartphones by Review Category")
+                     title="Smartphones by Review Category")
         st.plotly_chart(fig, use_container_width=True)
     
     # Most reviewed phones
@@ -292,7 +299,7 @@ elif page == "⭐ Review Analysis":
     st.subheader("🏆 Brands with Most Total Reviews")
     total_reviews_by_brand = df.groupby('Brand')['Reviews'].sum().sort_values(ascending=False).head(10)
     fig = px.bar(x=total_reviews_by_brand.index, y=total_reviews_by_brand.values,
-                title="Top 10 Brands by Total Reviews")
+                 title="Top 10 Brands by Total Reviews")
     st.plotly_chart(fig, use_container_width=True)
 
 elif page == "🔍 Advanced Analytics":
@@ -302,7 +309,7 @@ elif page == "🔍 Advanced Analytics":
     st.subheader("📊 Correlation Matrix")
     corr_matrix = df[['SmartPhone Price', 'Reviews']].corr()
     fig = px.imshow(corr_matrix, text_auto=True, aspect="auto",
-                    title="Correlation Matrix")
+                     title="Correlation Matrix")
     st.plotly_chart(fig, use_container_width=True)
     
     # Value for money analysis
@@ -314,8 +321,8 @@ elif page == "🔍 Advanced Analytics":
     # Price vs Reviews by Price Category
     st.subheader("📈 Price vs Reviews by Price Category")
     fig = px.scatter(df, x='SmartPhone Price', y='Reviews', color='Price_Category',
-                    title="Price vs Reviews by Price Category",
-                    hover_data=['Product Name', 'Brand'])
+                     title="Price vs Reviews by Price Category",
+                     hover_data=['Product Name', 'Brand'])
     st.plotly_chart(fig, use_container_width=True)
     
     # Brand popularity vs price strategy
@@ -329,8 +336,8 @@ elif page == "🔍 Advanced Analytics":
     brand_strategy = brand_strategy[brand_strategy['Phone Count'] >= 3]  # Filter brands with at least 3 phones
     
     fig = px.scatter(brand_strategy, x='Avg Price', y='Avg Reviews', 
-                    size='Phone Count', hover_name=brand_strategy.index,
-                    title="Brand Strategy: Average Price vs Average Reviews")
+                     size='Phone Count', hover_name=brand_strategy.index,
+                     title="Brand Strategy: Average Price vs Average Reviews")
     st.plotly_chart(fig, use_container_width=True)
     
     # Price distribution by brand (violin plot)
@@ -339,7 +346,7 @@ elif page == "🔍 Advanced Analytics":
     df_filtered = df[df['Brand'].isin(brands_with_multiple)]
     
     fig = px.violin(df_filtered, x='Brand', y='SmartPhone Price',
-                   title="Price Distribution by Brand (Brands with 3+ phones)")
+                    title="Price Distribution by Brand (Brands with 3+ phones)")
     fig.update_xaxes(tickangle=45)
 
     st.plotly_chart(fig, use_container_width=True)
@@ -352,22 +359,22 @@ elif page == "📈 Interactive Plots":
     
     # Brand filter
     selected_brands = st.sidebar.multiselect("Select Brands", 
-                                            options=df['Brand'].unique(),
-                                            default=df['Brand'].unique()[:5])
+                                             options=df['Brand'].unique(),
+                                             default=df['Brand'].unique()[:5])
     
     # Price range filter
     price_range = st.sidebar.slider("Price Range (₹)", 
-                                   min_value=int(df['SmartPhone Price'].min()),
-                                   max_value=int(df['SmartPhone Price'].max()),
-                                   value=(int(df['SmartPhone Price'].min()), 
-                                         int(df['SmartPhone Price'].max())))
+                                    min_value=int(df['SmartPhone Price'].min()),
+                                    max_value=int(df['SmartPhone Price'].max()),
+                                    value=(int(df['SmartPhone Price'].min()), 
+                                           int(df['SmartPhone Price'].max())))
     
     # Review range filter
     review_range = st.sidebar.slider("Review Range", 
-                                    min_value=int(df['Reviews'].min()),
-                                    max_value=int(df['Reviews'].max()),
-                                    value=(int(df['Reviews'].min()), 
-                                          int(df['Reviews'].max())))
+                                     min_value=int(df['Reviews'].min()),
+                                     max_value=int(df['Reviews'].max()),
+                                     value=(int(df['Reviews'].min()), 
+                                            int(df['Reviews'].max())))
     
     # Apply filters
     filtered_df = df[
@@ -383,18 +390,18 @@ elif page == "📈 Interactive Plots":
     # Interactive scatter plot
     st.subheader("📊 Interactive Scatter Plot")
     fig = px.scatter(filtered_df, x='SmartPhone Price', y='Reviews', 
-                    color='Brand', size='Reviews',
-                    hover_data=['Product Name'],
-                    title="Interactive Price vs Reviews")
+                     color='Brand', size='Reviews',
+                     hover_data=['Product Name'],
+                     title="Interactive Price vs Reviews")
     st.plotly_chart(fig, use_container_width=True)
     
     # 3D scatter plot
     st.subheader("🌐 3D Visualization")
     filtered_df['Price_Rank'] = filtered_df['SmartPhone Price'].rank(ascending=False)
     fig = px.scatter_3d(filtered_df, x='SmartPhone Price', y='Reviews', 
-                       z='Price_Rank', color='Brand',
-                       title="3D: Price vs Reviews vs Price Rank",
-                       hover_data=['Product Name'])
+                        z='Price_Rank', color='Brand',
+                        title="3D: Price vs Reviews vs Price Rank",
+                        hover_data=['Product Name'])
     st.plotly_chart(fig, use_container_width=True)
     
     # Filtered data table
@@ -413,12 +420,17 @@ elif page == "🎯 Recommendations":
     # Top picks by price range
     st.subheader("🏆 Top Picks by Price Range")
     
-    for category in df['Price_Category'].unique():
-        if pd.notna(category):
+    # Ensure categories are ordered for consistent display
+    price_categories_order = ['Under ₹10K', '₹10K-₹20K', '₹20K-₹30K', '₹30K-₹40K', '₹40K-₹50K', '₹50K+']
+    for category in price_categories_order:
+        if category in df['Price_Category'].cat.categories: # Check if category exists in the data
             st.write(f"**{category}:**")
             category_df = df[df['Price_Category'] == category]
             top_in_category = category_df.nlargest(3, 'Reviews')[['Product Name', 'Brand', 'SmartPhone Price', 'Reviews']]
-            st.dataframe(top_in_category)
+            if not top_in_category.empty:
+                st.dataframe(top_in_category)
+            else:
+                st.write("No phones in this category.")
     
     # Brand recommendations
     st.subheader("🏢 Brand Recommendations")
@@ -443,11 +455,11 @@ elif page == "🎯 Recommendations":
     col1, col2 = st.columns(2)
     
     with col1:
-        budget = st.number_input("Your Budget (₹)", min_value=5000, max_value=50000, value=20000, step=1000)
+        budget = st.number_input("Your Budget (₹)", min_value=5000, max_value=int(df['SmartPhone Price'].max()), value=20000, step=1000)
         preferred_brands = st.multiselect("Preferred Brands (optional)", df['Brand'].unique())
     
     with col2:
-        min_reviews = st.number_input("Minimum Reviews", min_value=0, max_value=10000, value=100)
+        min_reviews = st.number_input("Minimum Reviews", min_value=0, max_value=int(df['Reviews'].max()), value=100)
         show_top_n = st.slider("Show top N recommendations", 1, 20, 5)
     
     # Generate recommendations
