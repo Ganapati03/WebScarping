@@ -61,12 +61,10 @@ def load_data():
     df["SmartPhone Price"] = df["SmartPhone Price"].astype(int)
     df["Reviews"] = df["Reviews"].astype(int)
 
-    # --- NEW DATA CLEANING STEP ---
     # Filter out unrealistic prices and review counts
     # Assuming a minimum realistic smartphone price is 1000 and minimum reviews is 1
     df = df[df['SmartPhone Price'] >= 1000]
     df = df[df['Reviews'] >= 1]
-    # --- END NEW DATA CLEANING STEP ---
     
     # Extract brand from Product Name
     df["Brand"] = df["Product Name"].astype(str).apply(lambda x: x.split()[0])
@@ -362,19 +360,23 @@ elif page == "📈 Interactive Plots":
                                              options=df['Brand'].unique(),
                                              default=df['Brand'].unique()[:5])
     
+    # Calculate min/max for sliders based on filtered data
+    min_price_data = int(df['SmartPhone Price'].min())
+    max_price_data = int(df['SmartPhone Price'].max())
+    min_reviews_data = int(df['Reviews'].min())
+    max_reviews_data = int(df['Reviews'].max())
+
     # Price range filter
     price_range = st.sidebar.slider("Price Range (₹)", 
-                                    min_value=int(df['SmartPhone Price'].min()),
-                                    max_value=int(df['SmartPhone Price'].max()),
-                                    value=(int(df['SmartPhone Price'].min()), 
-                                           int(df['SmartPhone Price'].max())))
+                                    min_value=min_price_data,
+                                    max_value=max_price_data,
+                                    value=(min_price_data, max_price_data)) # Default to full range
     
     # Review range filter
     review_range = st.sidebar.slider("Review Range", 
-                                     min_value=int(df['Reviews'].min()),
-                                     max_value=int(df['Reviews'].max()),
-                                     value=(int(df['Reviews'].min()), 
-                                            int(df['Reviews'].max())))
+                                     min_value=min_reviews_data,
+                                     max_value=max_reviews_data,
+                                     value=(min_reviews_data, max_reviews_data)) # Default to full range
     
     # Apply filters
     filtered_df = df[
@@ -397,12 +399,16 @@ elif page == "📈 Interactive Plots":
     
     # 3D scatter plot
     st.subheader("🌐 3D Visualization")
-    filtered_df['Price_Rank'] = filtered_df['SmartPhone Price'].rank(ascending=False)
-    fig = px.scatter_3d(filtered_df, x='SmartPhone Price', y='Reviews', 
-                        z='Price_Rank', color='Brand',
-                        title="3D: Price vs Reviews vs Price Rank",
-                        hover_data=['Product Name'])
-    st.plotly_chart(fig, use_container_width=True)
+    # Ensure filtered_df is not empty before ranking
+    if not filtered_df.empty:
+        filtered_df['Price_Rank'] = filtered_df['SmartPhone Price'].rank(ascending=False)
+        fig = px.scatter_3d(filtered_df, x='SmartPhone Price', y='Reviews', 
+                            z='Price_Rank', color='Brand',
+                            title="3D: Price vs Reviews vs Price Rank",
+                            hover_data=['Product Name'])
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("No data to display for 3D visualization with current filters.")
     
     # Filtered data table
     st.subheader("📋 Filtered Data")
@@ -454,13 +460,26 @@ elif page == "🎯 Recommendations":
     
     col1, col2 = st.columns(2)
     
+    # Calculate dynamic min/max for number inputs
+    min_price_input = 5000
+    max_price_input = int(df['SmartPhone Price'].max())
+    default_budget_value = 20000
+    # Ensure the default budget value is within the actual data range
+    initial_budget_value = max(min_price_input, min(default_budget_value, max_price_input))
+
+    min_reviews_input = 0
+    max_reviews_input = int(df['Reviews'].max())
+    default_min_reviews_value = 100
+    # Ensure the default min_reviews value is within the actual data range
+    initial_min_reviews_value = max(min_reviews_input, min(default_min_reviews_value, max_reviews_input))
+
     with col1:
-        budget = st.number_input("Your Budget (₹)", min_value=5000, max_value=int(df['SmartPhone Price'].max()), value=20000, step=1000)
+        budget = st.number_input("Your Budget (₹)", min_value=min_price_input, max_value=max_price_input, value=initial_budget_value, step=1000)
         preferred_brands = st.multiselect("Preferred Brands (optional)", df['Brand'].unique())
     
     with col2:
-        min_reviews = st.number_input("Minimum Reviews", min_value=0, max_value=int(df['Reviews'].max()), value=100)
-        show_top_n = st.slider("Show top N recommendations", 1, 20, 5)
+        min_reviews = st.number_input("Minimum Reviews", min_value=min_reviews_input, max_value=max_reviews_input, value=initial_min_reviews_value)
+        show_top_n = st.slider("Show top N recommendations", 1, 20, 5) # This slider's max is fixed, so less prone to this specific error
     
     # Generate recommendations
     recommendation_df = df[df['SmartPhone Price'] <= budget]
